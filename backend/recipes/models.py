@@ -136,10 +136,7 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag, related_name='recipes', verbose_name='тэги'
     )
-    cooking_time = models.PositiveIntegerField(
-        verbose_name='сроки выполнения',
-        validators=[MinValueValidator(1, 'мин. значение - 1')],
-    )
+    cooking_time = models.CharField(max_length=NAME_LEGNTH, verbose_name='сроки выполнения')
     pub_date = models.DateTimeField('дата опубликации', auto_now_add=True)
 
     class Meta:
