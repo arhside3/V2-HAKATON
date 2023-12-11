@@ -5,7 +5,6 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import F, Max
 from rest_framework.exceptions import ValidationError
 from django.http import FileResponse
 
@@ -65,21 +64,17 @@ class UserView(UserViewSet):
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, serializer_class=SubscribeSerializer)
+    @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
-        followed_users = (
-            User.objects.filter(following__follower=self.request.user)
-            .annotate(last_recipe_date=Max('recipes__pub_date'))
-            .order_by(F('last_recipe_date').desc(nulls_last=True))
+        return self.get_paginated_response(
+            SubscribeSerializer(
+                self.paginate_queryset(
+                    User.objects.filter(subscribing__user=request.user)
+                ),
+                many=True,
+                context={'request': request},
+            ).data
         )
-
-        page = self.paginate_queryset(followed_users)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(followed_users, many=True)
-        return Response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
